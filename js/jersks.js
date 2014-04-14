@@ -9,18 +9,19 @@ var mainLayer; //< phaser layer object for the overview map
 
 var player;
 var enemies = [];
+var maxEnemies = 6;
 
 var playerShot = [];
 var enemyShot = [];
+var defaultShotDamage = 50;
 
 var commands;
-
-var mainMapSize = 30;
-
 var commandNum = 0;
 
-var cursors;
+var tileSize = 30;
+var mapSize = 20;
 
+var level = 0;
 
 window.onload = function() {
 
@@ -53,6 +54,10 @@ window.onload = function() {
 
     handleCommand();
 
+    //reset the radio buttons
+    $("input[type='radio']").prop('checked', false);
+    $("input[type='checkbox']").prop('checked', false);
+
   });
 
   var game = new Phaser.Game(600, 600, Phaser.AUTO, 'jersks-game', { preload: preload, create: create, update: update });
@@ -77,29 +82,12 @@ window.onload = function() {
 
     game.stage.backgroundColor = '#000000';
 
-    mainMap = game.add.tilemap('map', 30, 30);
+    mainMap = game.add.tilemap('map', tileSize, tileSize);
 
     mainMap.addTilesetImage('overview_background');
 
     mainLayer = mainMap.createLayer(0);
     mainLayer.resizeWorld();
-
-    game.camera.x = 600;
-    game.camera.y = 600;
-
-    player = game.add.sprite(315, 315, 'player_sprite');
-    player.anchor.setTo(0.5, 0.5);
-    game.physics.enable(player, Phaser.Physics.ARCADE);
-    player.body.collideWorldBounds = true;
-    player.body.immovable = true;
-    player.body.bounce.setTo(1, 1);
-
-    enemies.push(game.add.sprite(75,45, 'enemy_sprite'));
-    enemies[0].anchor.setTo(0.5, 0.5);
-    game.physics.enable(enemies[0], Phaser.Physics.ARCADE);
-    enemies[0].body.collideWorldBounds = true;
-    enemies[0].body.immovable = true;
-    enemies[0].angle = 180;
 
     for(var n=0; n<6; n++) {
       playerShot[n] = game.add.sprite(-50, -50, 'shot');
@@ -108,6 +96,7 @@ window.onload = function() {
 
 //    game.input.onDown.add(mapClick, this);
 
+    placePlayer();
     initBoard();
 
   }
@@ -117,7 +106,7 @@ window.onload = function() {
    */
   function update() {
 
-    for(var n=0; n<6; n++) {
+    for(var n=0; n<playerShot.length; n++) {
       if(playerShot[n].body.velocity.x  != 0) {
         if(playerShot[n].x < 0 || playerShot[n].x > 600) {
           playerShot[n].x = -50;
@@ -135,9 +124,80 @@ window.onload = function() {
         }
       }
 
-      game.physics.arcade.collide(playerShot[n], enemies[0], enemyHit);
+      for(var r=0; r<maxEnemies; r++) {
+        game.physics.arcade.collide(playerShot[n], enemies[r], enemyHit);
+      }
+
     }
 
+  }
+
+  /**
+   * initialize the board
+   */
+  function initBoard() {
+    var xpos;
+    var ypos;
+
+    for(var n=0; n<maxEnemies; n++) {
+      xpos = ((Math.floor(Math.random()*18)+1)*tileSize)+15;
+      ypos = ((Math.floor(Math.random()*10)+1)*tileSize)+15;
+      if(enemies[n] == undefined) {
+        enemies.push(game.add.sprite(xpos,ypos, 'enemy_sprite'));
+        enemies[n].anchor.setTo(0.5, 0.5);
+        game.physics.enable(enemies[n], Phaser.Physics.ARCADE);
+        enemies[n].body.collideWorldBounds = true;
+        enemies[n].body.immovable = true;
+        enemies[n].events.onKilled.add(enemyDead, this);
+      } else {
+        enemies[n].x = xpos;
+        enemies[n].y = ypos;
+      }
+
+      enemies[n].angle = 180;
+      enemies[n].health = 100;
+    }
+
+  }
+
+  /**
+   * place the player on a random spot at the bottom of the board and set up default variables
+   */
+  function placePlayer() {
+    var xpos = ((Math.floor(Math.random()*18)+1)*tileSize)+15;
+    var ypos = (18*tileSize)+15;
+    player = game.add.sprite(xpos, ypos, 'player_sprite');
+    player.anchor.setTo(0.5, 0.5);
+    game.physics.enable(player, Phaser.Physics.ARCADE);
+    player.body.collideWorldBounds = true;
+    player.body.immovable = true;
+    player.body.bounce.setTo(1, 1);
+    player.events.onKilled.add(playerDead, this);
+
+    player.angle = 0;
+    player.health = 100;
+    player.shotDamage = defaultShotDamage;
+  }
+
+  /**
+   * moves the player based on which side of the board the warp tile was on
+   * pass -1 for the bottom and right sides of the board
+   * and 1 for the top and left sides
+   * passing 0 for a variable does not change the value
+   *
+   * so if the player touches a warp tile at the top of the board, they should be located at the bottom of the board
+   * for the next level, so newLevelPlayerPlacement(0,1) would relocate them from the top to the bottom of the board
+   * on the same x position, making it appear that they have moved to the next board "up" from the current
+   * @param xChange
+   * @param yChange
+   */
+  function newLevelPlayerPlacement(xChange, yChange) {
+    var newX = player.x + (xChange*(19*tileSize));
+    var newY = player.y + (yChange*(19*tileSize));
+
+    player.x = newX;
+    player.y = newY;
+    player.angle = 0;
   }
 
   /**
@@ -146,17 +206,25 @@ window.onload = function() {
    * @param enemy
    */
   function enemyHit(shot, enemy) {
+    enemy.damage(player.shotDamage);
     shot.x = -50;
     shot.y = -50;
   }
 
   /**
-   * initialize the board
+   * event callback when player dies
    */
-  function initBoard() {
+  function playerDead() {
 
   }
 
+  /**
+   * event callback for enemy death
+   * @param deadEnemy
+   */
+  function enemyDead(deadEnemy) {
+
+  }
 
   /**
    * handle commands passed
@@ -168,27 +236,88 @@ window.onload = function() {
         tween.to({angle: player.angle-90}, 500, Phaser.Easing.Linear.None, true);
         break;
       case 'forward':
+        //get the player's current location
+        var currentLocation = calculatePlayerLocation();
+
         switch (player.angle) {
           case 0:
-            tween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
+            if(playerCanMoveToLocation(currentLocation.x, currentLocation.y-1)) {
+              tween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
+            }
             break;
           case 90:
-            tween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
+            if(playerCanMoveToLocation(currentLocation.x+1, currentLocation.y)) {
+              tween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
+            }
             break;
           case -180:
-            tween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
+            if(playerCanMoveToLocation(currentLocation.x, currentLocation.y+1)) {
+              tween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
+            }
             break;
           case -90:
-            tween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
+            if(playerCanMoveToLocation(currentLocation.x-1, currentLocation.y)) {
+              tween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
+            }
             break;
         }
         break;
       case 'right':
         tween.to({angle: player.angle+90}, 500, Phaser.Easing.Linear.None, true);
         break;
+      default:
+        tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+        break;
     }
 
     tween.onComplete.add(handleFire, this);
+  }
+
+  /**
+   * check tilemap to see if the user can move onto the tile
+   * @param x
+   * @param y
+   * @returns {boolean}
+   */
+  function playerCanMoveToLocation(x, y) {
+    return !(mainMap.getTile(x, y).index == 1);
+  }
+
+  /**
+   * return an object with the players x and y location relative to the tilemap
+   * @returns object
+   */
+  function calculatePlayerLocation() {
+    var retVal = {};
+    retVal.x = Math.floor(player.x/30);
+    retVal.y = Math.floor(player.y/30);
+
+    return retVal;
+  }
+
+  /**
+   * checks if all enemies are dead
+   * @returns {boolean}
+   */
+  function everyoneDead() {
+    var retVal = true;
+    for(var n=0; n<enemies.length; n++) {
+      if(enemies[n].exists) {
+        retVal = false;
+      }
+    }
+
+    return retVal;
+  }
+
+  function endOfTurn() {
+    if(everyoneDead()) {
+      //all the enemies are destroyed
+      var playerLoc = calculatePlayerLocation();
+      if(mainMap.getTile(playerLoc.x, playerLoc.y).index == 2) {
+        //and the player is on a warp tile
+      }
+    }
   }
 
   /**
@@ -242,6 +371,9 @@ window.onload = function() {
     commandNum++;
     if(commandNum<3) {
       handleCommand();
+    } else {
+      //this is the last move, handle checks for end of game
+      endOfTurn();
     }
   }
 
