@@ -3,7 +3,6 @@
  * 2/25/14 Mojiferous
  */
 
-var mapObj; //< overviewMap object
 var mainMap; //< phaser tilemap object
 var mainLayer; //< phaser layer object for the overview map
 
@@ -17,11 +16,15 @@ var defaultShotDamage = 50;
 
 var commands;
 var commandNum = 0;
+var maxTurns = 6;
 
 var tileSize = 30;
 var mapSize = 20;
 
 var level = 0;
+var levelMaps = [];
+var playerMapX = 0;
+var playerMapY = 0;
 
 window.onload = function() {
 
@@ -89,16 +92,17 @@ window.onload = function() {
     mainLayer = mainMap.createLayer(0);
     mainLayer.resizeWorld();
 
-    for(var n=0; n<6; n++) {
+    for(var n=0; n<maxTurns; n++) {
       playerShot[n] = game.add.sprite(-50, -50, 'shot');
       game.physics.enable(playerShot[n], Phaser.Physics.ARCADE);
     }
-
-//    game.input.onDown.add(mapClick, this);
+    for(var r=0; r<(maxEnemies*maxTurns); r++) {
+      enemyShot[r] = game.add.sprite(-50, -50, 'shot');
+      game.physics.enable(enemyShot[r], Phaser.Physics.ARCADE);
+    }
 
     placePlayer();
     initBoard();
-
   }
 
   /**
@@ -124,10 +128,14 @@ window.onload = function() {
         }
       }
 
-      for(var r=0; r<maxEnemies; r++) {
+      for(var r=0; r<maxTurns; r++) {
         game.physics.arcade.collide(playerShot[n], enemies[r], enemyHit);
       }
 
+    }
+
+    for(var t=0; t<enemyShot.length; t++) {
+      game.physics.arcade.collide(enemyShot[t], player, playerHit);
     }
 
   }
@@ -139,6 +147,12 @@ window.onload = function() {
     var xpos;
     var ypos;
 
+    //the maximum number of enemies should increase as level increases
+    var numEnemies = Math.floor(Math.random()*level);
+    if(numEnemies < 1) {
+      numEnemies = 1;
+    }
+
     for(var n=0; n<maxEnemies; n++) {
       xpos = ((Math.floor(Math.random()*18)+1)*tileSize)+15;
       ypos = ((Math.floor(Math.random()*10)+1)*tileSize)+15;
@@ -149,15 +163,87 @@ window.onload = function() {
         enemies[n].body.collideWorldBounds = true;
         enemies[n].body.immovable = true;
         enemies[n].events.onKilled.add(enemyDead, this);
+        enemies[n].health = 100;
       } else {
         enemies[n].x = xpos;
         enemies[n].y = ypos;
+        enemies[n].revive(100);
       }
 
       enemies[n].angle = 180;
-      enemies[n].health = 100;
+
+      //enemies beyond the random number set above should not exist
+      if(n > (numEnemies-1)) {
+        enemies[n].exists = false;
+      }
+
+      for(var r=0; r<maxTurns; r++) {
+        var shotNum = (n*maxTurns)+r;
+        enemyShot[shotNum].shotDamage = defaultShotDamage;
+      }
     }
 
+  }
+
+  /**
+   * instantiate a new passed map of the passed type at the current coordinates
+   * @param mapType
+   */
+  function addMapOfType(passedMap) {
+    if(levelMaps[playerMapX][playerMapY] == undefined) {
+      //this level map has not been instantiated before
+      if(levelMaps[playerMapX] == undefined) {
+        levelMaps[playerMapX] = [];
+      }
+      levelMaps[playerMapX][playerMapY] = passedMap;
+    }
+  }
+
+  /**
+   * returns a new random map array
+   * @param exitDir
+   * @returns {number[]}
+   */
+  function returnNewMapFromDirection(exitDir) {
+    var exits = 1;
+    var newMap = [0,0,0,0];
+
+    switch (exitDir) {
+      case 0:
+        //player exited the top
+        newMap[2] = 1;
+        break;
+      case 1:
+        //player exited the right
+        newMap[3] = 1;
+        break;
+      case 2:
+        //player exited the bottom
+        newMap[0] = 1;
+        break;
+      case 3:
+        //player exited the left
+        newMap[1] = 1;
+        break;
+    }
+
+    for(var n=0; n<4; n++) {
+      var hasExit = Math.floor(Math.random()*100);
+
+      if(hasExit > 75) {
+        if(newMap[n] == 0) {
+          exits++;
+          newMap[n] = 1;
+        }
+      }
+    }
+
+    if(exits == 1) {
+      //we need more than one exit for later maps, create an exit opposite the entrance
+      newMap[exitDir] = 1;
+    }
+
+    return newMap;
   }
 
   /**
@@ -165,7 +251,7 @@ window.onload = function() {
    */
   function placePlayer() {
     var xpos = ((Math.floor(Math.random()*18)+1)*tileSize)+15;
-    var ypos = (18*tileSize)+15;
+    var ypos = ((Math.floor(Math.random()*5)+14)*tileSize)+15;
     player = game.add.sprite(xpos, ypos, 'player_sprite');
     player.anchor.setTo(0.5, 0.5);
     game.physics.enable(player, Phaser.Physics.ARCADE);
@@ -192,8 +278,8 @@ window.onload = function() {
    * @param yChange
    */
   function newLevelPlayerPlacement(xChange, yChange) {
-    var newX = player.x + (xChange*(19*tileSize));
-    var newY = player.y + (yChange*(19*tileSize));
+    var newX = player.x + (xChange*(18*tileSize));
+    var newY = player.y + (yChange*(18*tileSize));
 
     player.x = newX;
     player.y = newY;
@@ -207,6 +293,12 @@ window.onload = function() {
    */
   function enemyHit(shot, enemy) {
     enemy.damage(player.shotDamage);
+    shot.x = -50;
+    shot.y = -50;
+  }
+
+  function playerHit(shot, playerVar) {
+    player.damage(shot.shotDamage);
     shot.x = -50;
     shot.y = -50;
   }
@@ -243,21 +335,29 @@ window.onload = function() {
           case 0:
             if(playerCanMoveToLocation(currentLocation.x, currentLocation.y-1)) {
               tween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
+            } else {
+              tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
             }
             break;
           case 90:
             if(playerCanMoveToLocation(currentLocation.x+1, currentLocation.y)) {
               tween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
+            } else {
+              tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
             }
             break;
           case -180:
             if(playerCanMoveToLocation(currentLocation.x, currentLocation.y+1)) {
               tween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
+            } else {
+              tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
             }
             break;
           case -90:
             if(playerCanMoveToLocation(currentLocation.x-1, currentLocation.y)) {
               tween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
+            } else {
+              tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
             }
             break;
         }
@@ -280,6 +380,9 @@ window.onload = function() {
    * @returns {boolean}
    */
   function playerCanMoveToLocation(x, y) {
+    if(x<0 || y<0 || x>=mapSize || y>= mapSize) {
+      return false;
+    }
     return !(mainMap.getTile(x, y).index == 1);
   }
 
@@ -310,12 +413,19 @@ window.onload = function() {
     return retVal;
   }
 
+  /**
+   * handle the end of each turn, check to see if everyone is dead, and then check to see if the player is
+   * on a warp tile
+   */
   function endOfTurn() {
     if(everyoneDead()) {
       //all the enemies are destroyed
       var playerLoc = calculatePlayerLocation();
       if(mainMap.getTile(playerLoc.x, playerLoc.y).index == 2) {
         //and the player is on a warp tile
+        level++;
+        initBoard();
+        newLevelPlayerPlacement(0,1);
       }
     }
   }
