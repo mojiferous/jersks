@@ -14,9 +14,11 @@ var playerShot = [];
 var enemyShot = [];
 var defaultShotDamage = 50;
 
-var commands;
+var playerCommands;
+var enemyCommands;
 var commandNum = 0;
 var maxTurns = 6;
+var enemyPos = [];
 
 var tileSize = 30;
 var mapSize = 20;
@@ -34,26 +36,26 @@ window.onload = function() {
     //handle clicks on the submit moves button
     resetCommands();
     if($('#left_fire1').is(':checked')) {
-      commands[0].fireLeft = 1;
+      playerCommands[0].fireLeft = 1;
     }
     if($('#left_fire2').is(':checked')) {
-      commands[1].fireLeft = 1;
+      playerCommands[1].fireLeft = 1;
     }
     if($('#left_fire3').is(':checked')) {
-      commands[2].fireLeft = 1;
+      playerCommands[2].fireLeft = 1;
     }
     if($('#right_fire1').is(':checked')) {
-      commands[0].fireRight = 1;
+      playerCommands[0].fireRight = 1;
     }
     if($('#right_fire2').is(':checked')) {
-      commands[1].fireRight = 1;
+      playerCommands[1].fireRight = 1;
     }
     if($('#right_fire3').is(':checked')) {
-      commands[2].fireRight = 1;
+      playerCommands[2].fireRight = 1;
     }
-    commands[0].move = $("input[name='move1']:checked").val();
-    commands[1].move = $("input[name='move2']:checked").val();
-    commands[2].move = $("input[name='move3']:checked").val();
+    playerCommands[0].move = $("input[name='move1']:checked").val();
+    playerCommands[1].move = $("input[name='move2']:checked").val();
+    playerCommands[2].move = $("input[name='move3']:checked").val();
 
     commandNum = 0;
 
@@ -150,10 +152,10 @@ function update() {
  * handle commands passed
  */
 function handleCommand() {
-  var tween = game.add.tween(player);
-  switch(commands[commandNum].move) {
+  var playerTween = game.add.tween(player);
+  switch(playerCommands[commandNum].move) {
     case 'left':
-      tween.to({angle: player.angle-90}, 500, Phaser.Easing.Linear.None, true);
+      playerTween.to({angle: player.angle-90}, 500, Phaser.Easing.Linear.None, true);
       break;
     case 'forward':
       //get the player's current location
@@ -162,43 +164,43 @@ function handleCommand() {
       switch (player.angle) {
         case 0:
           if(playerCanMoveToLocation(currentLocation.x, currentLocation.y-1)) {
-            tween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
           } else {
-            tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case 90:
           if(playerCanMoveToLocation(currentLocation.x+1, currentLocation.y)) {
-            tween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
           } else {
-            tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case -180:
           if(playerCanMoveToLocation(currentLocation.x, currentLocation.y+1)) {
-            tween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
           } else {
-            tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case -90:
           if(playerCanMoveToLocation(currentLocation.x-1, currentLocation.y)) {
-            tween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
           } else {
-            tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
       }
       break;
     case 'right':
-      tween.to({angle: player.angle+90}, 500, Phaser.Easing.Linear.None, true);
+      playerTween.to({angle: player.angle+90}, 500, Phaser.Easing.Linear.None, true);
       break;
     default:
-      tween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
+      playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
       break;
   }
 
-  tween.onComplete.add(handleFire, this);
+  playerTween.onComplete.add(handleFire, this);
 }
 
 /**
@@ -251,7 +253,7 @@ function endOfTurn() {
 }
 
 /**
- * handle fire commands
+ * handle player fire commands
  */
 function handleFire() {
   var leftProjectileNum = commandNum*2;
@@ -260,7 +262,7 @@ function handleFire() {
   playerShot[leftProjectileNum].angle = player.angle+90;
   playerShot[rightProjectileNum].angle = player.angle+90;
 
-  if(commands[commandNum].fireLeft == 1) {
+  if(playerCommands[commandNum].fireLeft == 1) {
     playerShot[leftProjectileNum].x = player.x;
     playerShot[leftProjectileNum].y = player.y;
     switch (player.angle) {
@@ -279,7 +281,7 @@ function handleFire() {
     }
   }
 
-  if(commands[commandNum].fireRight == 1) {
+  if(playerCommands[commandNum].fireRight == 1) {
     playerShot[rightProjectileNum].x = player.x;
     playerShot[rightProjectileNum].y = player.y;
     switch (player.angle) {

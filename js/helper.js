@@ -63,6 +63,23 @@ function calculatePlayerLocation() {
 }
 
 /**
+ * return an object with the enemy's x and y location relative to the tilemap
+ * specific enemy determined by enemyNum
+ * @param enemyNum
+ * @returns {{}}
+ */
+function calculateEnemyLocation(enemyNum) {
+  var retVal = {x: -1, y: -1};
+
+  if(enemies[enemyNum] != undefined && enemies[enemyNum].exists) {
+    retVal.x = Math.floor(enemies[enemyNum].x/30);
+    retVal.y = Math.floor(enemies[enemyNum].y/30);
+  }
+
+  return retVal;
+}
+
+/**
  * checks if all enemies are dead
  * @returns {boolean}
  */
@@ -81,9 +98,27 @@ function everyoneDead() {
  * resets the commands array for a new round
  */
 function resetCommands() {
-  commands = [
+  playerCommands = [
     {move: null, fireLeft: 0, fireRight: 0},
     {move: null, fireLeft: 0, fireRight: 0},
     {move: null, fireLeft: 0, fireRight: 0}
   ];
+
+  for(var n=0; n<enemies.length; n++) {
+    enemyCommands[n] = [
+      {move: null, fireLeft: 0, fireRight: 0},
+      {move: null, fireLeft: 0, fireRight: 0},
+      {move: null, fireLeft: 0, fireRight: 0}
+    ];
+
+    enemyPos[n] = [
+      {x: 0, y: 0},
+      {x: 0, y: 0},
+      {x: 0, y: 0}
+    ];
+  }
+}
+
+function enemyCanMoveToLocation(enemyNum, x, y) {
+
 }
