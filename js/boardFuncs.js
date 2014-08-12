@@ -18,6 +18,7 @@ function initBoard() {
     numEnemies = 1;
   }
 
+  //however we never go beyond the global maxEnemies
   for(var n=0; n<maxEnemies; n++) {
     xpos = ((Math.floor(Math.random()*16)+2)*tileSize)+15;
     var maxY = (level == 0) ? 10 : 16;
@@ -43,6 +44,7 @@ function initBoard() {
       enemies[n].exists = false;
     }
 
+    //set the damage the enemy's shots do
     for(var r=0; r<maxTurns; r++) {
       var shotNum = (n*maxTurns)+r;
       enemyShot[shotNum].shotDamage = defaultShotDamage;
@@ -52,7 +54,8 @@ function initBoard() {
 }
 
 /**
- * sets the tile map to match the current levelMap
+ * sets the phaser tile map to match the current levelMap
+ * this is used exclusively for rendering so new levels are rendered correctly
  */
 function setTileMap() {
   var thisMap = levelMaps[playerMapX][playerMapY];
@@ -67,8 +70,9 @@ function setTileMap() {
       }
     }
   } else {
+    //no top exit
     if(mainMap.getTile(1,0) != 1) {
-      //there is not currently an exit from the top
+      //there is not currently an closed tile on the top
       for(n=1; n<19; n++) {
         mainMap.putTile(1, n, 0);
       }
