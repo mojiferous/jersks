@@ -55,6 +55,57 @@ function determineAICommands() {
         //the player is immediately to the right of the enemy, shoot twice
         enemyCommands[n][0].fireRight = 1;
         enemyCommands[n][1].fireRight = 1;
+      } else if(playerLoc.x == 0 && playerLoc.y < 0) {
+        //the player is above the enemy, turn right, fire twice
+        enemyCommands[n][0].move = 'right';
+        enemyCommands[n][1].fireLeft = 1;
+        enemyCommands[n][2].fireLeft = 1;
+      } else if(playerLoc.x == 0 && playerLoc.y > 0) {
+        //the player is directly below the enemy, turn right and fire twice
+        enemyCommands[n][0].move = 'right';
+        enemyCommands[n][1].fireRight = 1;
+        enemyCommands[n][2].fireRight = 1;
+      } else if(playerLoc.y < 0) {
+        //the player is above us, move forward (no matter where they are)
+        enemyCommands[n][0].move = 'forward';
+        enemyCommands[n][1].move = 'forward';
+        enemyCommands[n][2].move = 'forward';
+
+        if(playerLoc.x < 0) {
+          //the player is to the left
+          enemyCommands[n][0].fireLeft = 1;
+          enemyCommands[n][1].fireLeft = 1;
+          enemyCommands[n][2].fireLeft = 1;
+        } else {
+          //the player is to the right
+          enemyCommands[n][0].fireRight = 1;
+          enemyCommands[n][1].fireRight = 1;
+          enemyCommands[n][2].fireRight = 1;
+        }
+
+      } else {
+        //presumably, the player is "below" or behind us now
+        if(playerLoc.x < 0 && playerLoc.x > -3) {
+          //the player is near our left
+          enemyCommands[n][0].move = 'left';
+          enemyCommands[n][1].move = 'forward';
+          enemyCommands[n][2].move = 'forward';
+
+          enemyCommands[n][1].fireLeft = 1;
+          enemyCommands[n][2].fireLeft = 1;
+        } else if(playerLoc.x > 0 && playerLoc.x < 3) {
+          //the player is near our right
+          enemyCommands[n][0].move = 'right';
+          enemyCommands[n][1].move = 'forward';
+          enemyCommands[n][2].move = 'forward';
+
+          enemyCommands[n][1].fireRight = 1;
+          enemyCommands[n][2].fireRight = 1;
+        } else {
+          enemyCommands[n][0].move = 'left';
+          enemyCommands[n][1].move = 'left';
+          enemyCommands[n][2].move = 'forward';
+        }
       }
 
     }

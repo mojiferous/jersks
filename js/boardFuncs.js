@@ -51,6 +51,32 @@ function initBoard() {
     }
   }
 
+  //hide the exit controls from the board
+  $('#exit-controls').hide();
+}
+
+/**
+ * shows or hides exit controls
+ */
+function showExitControls() {
+
+  showHideDiv('.exit_up', mapHasExitFromDirection(0));
+  showHideDiv('.exit_right', mapHasExitFromDirection(1));
+  showHideDiv('.exit_down', mapHasExitFromDirection(2));
+  showHideDiv('.exit_left', mapHasExitFromDirection(3));
+
+  $('#exit-controls').show();
+}
+
+/**
+ * returns true if the map has an exit from the passed direction
+ * @param direction
+ * @returns {boolean}
+ */
+function mapHasExitFromDirection(direction) {
+  var thisMap = levelMaps[playerMapX][playerMapY];
+
+  return (thisMap[direction] == 1);
 }
 
 /**
@@ -226,5 +252,4 @@ function newLevelPlayerPlacement(xChange, yChange) {
 
   player.x = newX;
   player.y = newY;
-  player.angle = 0;
 }

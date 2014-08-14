@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Jersks</title>
     <script type="application/javascript" src="js/phaser.min.js"></script>
-    <script type="application/javascript" src="js/jquery-2.1.0.min.js"></script>
+    <script type="application/javascript" src="js/jquery-2.1.1.min.js"></script>
 
     <script type="application/javascript" src="js/boardFuncs.js"></script>
     <script type="application/javascript" src="js/helper.js"></script>
@@ -70,6 +70,19 @@
       </label>
       <br/>
       <button id="submit_moves">GO</button>
+    </div>
+
+    <div id="exit-controls">
+      <input id="exit_left" class="exit_left" type="radio" name="exit" value="left">
+      <label for="exit_left" class="exit_left">Left</label>
+      <input id="exit_up" class="exit_up" type="radio" name="exit" value="up">
+      <label for="exit_up" class="exit_up">Up</label>
+      <input id="exit_right" class="exit_right" type="radio" name="exit" value="right">
+      <label for="exit_right" class="exit_right">Right</label>
+      <input id="exit_down" class="exit_down" type="radio" name="exit" value="down">
+      <label for="exit_down" class="exit_down">Down</label>
+      <br/>
+      <button id="exit_button">EXIT</button>
     </div>
 
   </body>

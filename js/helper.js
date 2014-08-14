@@ -15,10 +15,28 @@ function enemyHit(shot, enemy) {
   shot.y = -50;
 }
 
+/**
+ * player has been hit by an enemy projectile
+ * @param shot
+ * @param playerVar
+ */
 function playerHit(shot, playerVar) {
   player.damage(shot.shotDamage);
   shot.x = -50;
   shot.y = -50;
+}
+
+/**
+ * helper function to show or hide a div
+ * @param divId
+ * @param show
+ */
+function showHideDiv(divId, show) {
+  if(show) {
+    $(divId).show();
+  } else {
+    $(divId).hide();
+  }
 }
 
 /**
@@ -119,6 +137,15 @@ function resetCommands() {
   }
 }
 
-function enemyCanMoveToLocation(enemyNum, x, y) {
-
+/**
+ * calculates if enemy unit can move onto location, to prevent enemy from moving onto warp tiles
+ * @param x
+ * @param y
+ * @returns {boolean}
+ */
+function enemyCanMoveToLocation(x, y) {
+  if(x<0 || y<0 || x>=mapSize || y>= mapSize) {
+    return false;
+  }
+  return (mainMap.getTile(x, y).index == 0);
 }

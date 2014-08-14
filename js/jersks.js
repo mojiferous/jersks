@@ -59,12 +59,31 @@ window.onload = function() {
 
     commandNum = 0;
 
+    determineAICommands();
+
     handleCommand();
 
     //reset the radio buttons
     $("input[type='radio']").prop('checked', false);
     $("input[type='checkbox']").prop('checked', false);
 
+  });
+
+  $('#exit_button').click(function(){
+    //handle clicks on the exit button
+    if(everyoneDead()) {
+      //only respond to clicks on the exit button if everyone is dead
+      switch($("input[name='exit']:checked").val()) {
+        case 'left':
+          break;
+        case 'up':
+          break;
+        case 'right':
+          break;
+        case 'down':
+          break;
+      }
+    }
   });
 
   game = new Phaser.Game(600, 600, Phaser.AUTO, 'jersks-game', { preload: preload, create: create, update: update });
@@ -134,7 +153,7 @@ function update() {
       }
     }
 
-    for(var r=0; r<maxTurns; r++) {
+    for(var r=0; r<maxEnemies; r++) {
       //collide player shots with enemies, triggering enemyHit
       game.physics.arcade.collide(playerShot[n], enemies[r], enemyHit);
     }
@@ -142,6 +161,17 @@ function update() {
   }
 
   for(var t=0; t<enemyShot.length; t++) {
+
+    if(enemyShot[t].body.velocity.x  != 0) {
+      if(enemyShot[t].x < 0 || enemyShot[t].x > 600) {
+        stopShot(enemyShot[t]);
+      }
+    }
+    if(enemyShot[t].body.velocity.y  != 0) {
+      if(enemyShot[t].y < 0 || enemyShot[t].y > 600) {
+        stopShot(enemyShot[t]);
+      }
+    }
 
     //collide enemy shots with the player, triggering playerHit
     game.physics.arcade.collide(enemyShot[t], player, playerHit);
@@ -178,28 +208,30 @@ function handleCommand() {
       switch (player.angle) {
         case 0:
           if(playerCanMoveToLocation(currentLocation.x, currentLocation.y-1)) {
-            playerTween.to({y: player.y-30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({y: player.y-tileSize}, 500, Phaser.Easing.Linear.None, true);
           } else {
             playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case 90:
           if(playerCanMoveToLocation(currentLocation.x+1, currentLocation.y)) {
-            playerTween.to({x: player.x+30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x+tileSize}, 500, Phaser.Easing.Linear.None, true);
           } else {
             playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case -180:
+        case 180:
           if(playerCanMoveToLocation(currentLocation.x, currentLocation.y+1)) {
-            playerTween.to({y: player.y+30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({y: player.y+tileSize}, 500, Phaser.Easing.Linear.None, true);
           } else {
             playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
           break;
         case -90:
+        case 270:
           if(playerCanMoveToLocation(currentLocation.x-1, currentLocation.y)) {
-            playerTween.to({x: player.x-30}, 500, Phaser.Easing.Linear.None, true);
+            playerTween.to({x: player.x-tileSize}, 500, Phaser.Easing.Linear.None, true);
           } else {
             playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
           }
@@ -212,6 +244,53 @@ function handleCommand() {
     default:
       playerTween.to({x: player.x}, 500, Phaser.Easing.Linear.None, true);
       break;
+  }
+
+  var enemyTween = [];
+  var enemyLoc;
+  for(var n=0; n<enemies.length; n++) {
+    if(enemies[n].exists) {
+      //if this enemy exists, add a tween for them
+      enemyTween[n] = game.add.tween(enemies[n]);
+
+      switch(enemyCommands[n][commandNum].move) {
+        case 'left':
+          enemyTween[n].to({angle: enemies[n].angle-90}, 485, Phaser.Easing.Linear.None, true);
+          break;
+        case 'forward':
+          //get the player's current location
+          enemyLoc = calculateEnemyLocation(n);
+
+          switch (enemies[n].angle) {
+            case 0:
+              if(enemyCanMoveToLocation(enemyLoc.x, enemyLoc.y-1)) {
+                enemyTween[n].to({y: enemies[n].y-tileSize}, 485, Phaser.Easing.Linear.None, true);
+              }
+              break;
+            case 90:
+              if(enemyCanMoveToLocation(enemyLoc.x+1, enemyLoc.y)) {
+                enemyTween[n].to({x: enemies[n].x+tileSize}, 485, Phaser.Easing.Linear.None, true);
+              }
+              break;
+            case -180:
+            case 180:
+              if(enemyCanMoveToLocation(enemyLoc.x, enemyLoc.y+1)) {
+                enemyTween[n].to({y: enemies[n].y+tileSize}, 485, Phaser.Easing.Linear.None, true);
+              }
+              break;
+            case -90:
+            case 270:
+              if(enemyCanMoveToLocation(enemyLoc.x-1, enemyLoc.y)) {
+                enemyTween[n].to({x: enemies[n].x-tileSize}, 485, Phaser.Easing.Linear.None, true);
+              }
+              break;
+          }
+          break;
+        case 'right':
+          enemyTween[n].to({angle: enemies[n].angle+90}, 485, Phaser.Easing.Linear.None, true);
+          break;
+      }
+    }
   }
 
   //execute the tween, and then run handleFire at the end
@@ -240,20 +319,24 @@ function endOfTurn() {
         //move the player to the opposite side (so it appears the player exits the level on the left and
         //enters the new level on the right
         newLevelPlayerPlacement(-1,0);
+        player.angle = -90;
       } else if(playerLoc.x > 18) {
         //this is a right tile
         changeDir = 1;
         playerMapX++;
-        newLevelPlayerPlacement(1,0);
+        newLevelPlayerPlacement(-1,0);
+        player.angle = 90;
       } else if(playerLoc.y == 0) {
         //this is a top tile
         changeDir = 0;
         playerMapY--;
         newLevelPlayerPlacement(0,1);
+        player.angle = 0;
       } else {
         //this is a bottom tile
         playerMapY++;
         newLevelPlayerPlacement(0,-1);
+        player.angle = -180;
       }
 
       if(levelMaps[playerMapX] == undefined) {
@@ -270,11 +353,14 @@ function endOfTurn() {
       //place enemies on the board
       initBoard();
     }
+
+    //show the fast exit controls
+    showExitControls();
   }
 }
 
 /**
- * handle player fire commands
+ * handle unit fire commands
  */
 function handleFire() {
   //these two numbers ensure that left projectiles will always be even and right odd numbers in the array
@@ -295,9 +381,11 @@ function handleFire() {
         playerShot[leftProjectileNum].body.velocity.y = -500;
         break;
       case -180:
+      case 180:
         playerShot[leftProjectileNum].body.velocity.x = 500;
         break;
       case -90:
+      case 270:
         playerShot[leftProjectileNum].body.velocity.y = 500;
         break;
     }
@@ -314,11 +402,62 @@ function handleFire() {
         playerShot[rightProjectileNum].body.velocity.y = 500;
         break;
       case -180:
+      case 180:
         playerShot[rightProjectileNum].body.velocity.x = -500;
         break;
       case -90:
+      case 270:
         playerShot[rightProjectileNum].body.velocity.y = -500;
         break;
+    }
+  }
+
+  for(var n=0; n<enemies.length; n++) {
+    if(enemies[n].exists) {
+      enemyShot[leftProjectileNum*n].angle = enemies[n].angle+90;
+      enemyShot[rightProjectileNum*n].angle = enemies[n].angle+90;
+
+      if(enemyCommands[n][commandNum].fireLeft == 1) {
+        enemyShot[leftProjectileNum*n].x = enemies[n].x;
+        enemyShot[leftProjectileNum*n].y = enemies[n].y;
+        switch (enemies[n].angle) {
+          case 0:
+            enemyShot[leftProjectileNum*n].body.velocity.x = -500;
+            break;
+          case 90:
+            enemyShot[leftProjectileNum*n].body.velocity.y = -500;
+            break;
+          case -180:
+          case 180:
+            enemyShot[leftProjectileNum*n].body.velocity.x = 500;
+            break;
+          case -90:
+          case 270:
+            enemyShot[leftProjectileNum*n].body.velocity.y = 500;
+            break;
+        }
+      }
+
+      if(enemyCommands[n][commandNum].fireRight == 1) {
+        enemyShot[rightProjectileNum*n].x = enemies[n].x;
+        enemyShot[rightProjectileNum*n].y = enemies[n].y;
+        switch (enemies[n].angle) {
+          case 0:
+            enemyShot[rightProjectileNum*n].body.velocity.x = 500;
+            break;
+          case 90:
+            enemyShot[rightProjectileNum*n].body.velocity.y = 500;
+            break;
+          case -180:
+          case 180:
+            enemyShot[rightProjectileNum*n].body.velocity.x = -500;
+            break;
+          case -90:
+          case 270:
+            enemyShot[rightProjectileNum*n].body.velocity.y = -500;
+            break;
+        }
+      }
     }
   }
 
